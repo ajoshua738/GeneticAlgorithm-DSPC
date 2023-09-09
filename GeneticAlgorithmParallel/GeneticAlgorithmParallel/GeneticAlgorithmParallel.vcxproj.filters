@@ -15,10 +15,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Serial.cpp">
+    <ClCompile Include="Serial_1.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GA_OpenMP.cpp">
+    <ClCompile Include="Serial_2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
