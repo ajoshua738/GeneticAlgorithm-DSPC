@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="OpenMP.cpp" />
     <ClCompile Include="Serial_1.cpp" />
     <ClCompile Include="Serial_2.cpp" />
   </ItemGroup>
