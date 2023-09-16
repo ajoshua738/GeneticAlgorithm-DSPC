@@ -27,5 +27,13 @@
     <ClCompile Include="MPI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Serial_3.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="File.cu" />
+    <CudaCompile Include="File1.cu" />
+    <CudaCompile Include="CUDA_GA.cu" />
   </ItemGroup>
 </Project>
