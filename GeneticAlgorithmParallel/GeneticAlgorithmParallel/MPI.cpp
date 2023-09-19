@@ -61,17 +61,12 @@ vector<char> crossover(const vector<char>& parent1, const vector<char>& parent2)
 void mutate(vector<char>& solution) {
     for (size_t i = 0; i < solution.size(); ++i) {
         if (static_cast<double>(rand()) / RAND_MAX < MUTATION_RATE) {
-            solution[i] = !solution[i];
+            solution[i] = ~solution[i];
         }
     }
 }
 
 int main(int argc, char** argv) {
-    MPI_Init(&argc, &argv);
-
-    int rank, size;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
 
     srand(static_cast<unsigned int>(time(nullptr)));
 
@@ -90,9 +85,14 @@ int main(int argc, char** argv) {
 
     sort(items.begin(), items.end(), compareItems);
 
-    int localPopulationSize = POPULATION_SIZE / size;
-    vector<vector<char>> localPopulation(localPopulationSize);
-    vector<vector<char>> newLocalPopulation(localPopulationSize);
+    MPI_Init(&argc, &argv);
+
+    int rank, size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    vector<vector<char>> localPopulation(POPULATION_SIZE / size);
+    vector<vector<char>> newLocalPopulation(POPULATION_SIZE / size);
 
     int bestFitness = 0;
     vector<char> bestSolution;
@@ -101,13 +101,13 @@ int main(int argc, char** argv) {
     clock_t start_time = clock();
 
     for (int generation = 0; generation < GENERATION_COUNT; ++generation) {
-        for (int i = 0; i < localPopulationSize; ++i) {
+        for (int i = 0; i < POPULATION_SIZE / size; ++i) {
             localPopulation[i] = generateRandomSolution(itemCount);
         }
 
-        for (int i = 0; i < localPopulationSize; ++i) {
-            int parent1Index = rand() % localPopulationSize;
-            int parent2Index = rand() % localPopulationSize;
+        for (int i = 0; i < POPULATION_SIZE / size; ++i) {
+            int parent1Index = rand() % POPULATION_SIZE / size;
+            int parent2Index = rand() % POPULATION_SIZE / size;
 
             vector<char> child = crossover(localPopulation[parent1Index], localPopulation[parent2Index]);
 
