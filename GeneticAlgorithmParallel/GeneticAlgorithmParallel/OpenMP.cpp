@@ -4,7 +4,7 @@
 //#include <ctime>
 //#include <cstdlib>
 //#include <string>
-//#include <omp.h> // Include the OpenMP header
+//#include <omp.h> 
 //
 //using namespace std;
 //
@@ -23,15 +23,15 @@
 //    return (static_cast<double>(item1.value) / item1.weight) > (static_cast<double>(item2.value) / item2.weight);
 //}
 //
-//vector<bool> generateRandomSolution(size_t itemCount) {
-//    vector<bool> solution(itemCount);
+//vector<char> generateRandomSolution(size_t itemCount) {
+//    vector<char> solution(itemCount);
 //    for (size_t i = 0; i < itemCount; ++i) {
 //        solution[i] = rand() % 2;
 //    }
 //    return solution;
 //}
 //
-//int calculateFitness(const vector<bool>& solution, int& totalWeight, const vector<Item>& items) {
+//int calculateFitness(const vector<char>& solution, int& totalWeight, const vector<Item>& items) {
 //    int totalValue = 0;
 //    totalWeight = 0;
 //    for (size_t i = 0; i < solution.size(); ++i) {
@@ -46,12 +46,9 @@
 //    return totalValue;
 //}
 //
-//vector<bool> crossover(const vector<bool>& parent1, const vector<bool>& parent2) {
-//    vector<bool> child(parent1.size());
+//vector<char> crossover(const vector<char>& parent1, const vector<char>& parent2) {
+//    vector<char> child(parent1.size());
 //    int crossoverPoint = rand() % parent1.size();
-//
-//    // Use #pragma omp critical to protect shared data access
-//#pragma omp parallel for
 //    for (int i = 0; i < crossoverPoint; ++i) {
 //        child[i] = parent1[i];
 //    }
@@ -61,7 +58,7 @@
 //    return child;
 //}
 //
-//void mutate(vector<bool>& solution) {
+//void mutate(vector<char>& solution) {
 //    for (size_t i = 0; i < solution.size(); ++i) {
 //        if (static_cast<double>(rand()) / RAND_MAX < MUTATION_RATE) {
 //            solution[i] = !solution[i];
@@ -72,7 +69,7 @@
 //int main() {
 //    srand(static_cast<unsigned int>(time(nullptr)));
 //
-//    size_t itemCount = 77; // Define the number of items (adjust as needed)
+//    size_t itemCount = 77;
 //
 //    vector<Item> items;
 //    items.reserve(itemCount);
@@ -87,58 +84,53 @@
 //
 //    sort(items.begin(), items.end(), compareItems);
 //
-//    vector<vector<bool>> population(POPULATION_SIZE);
-//
-//    for (int i = 0; i < POPULATION_SIZE; ++i) {
-//        population[i] = generateRandomSolution(itemCount);
-//    }
-//
-//    int bestFitness = 0;
-//    vector<bool> bestSolution;
-//    int bestWeight = 0;
-//
-//    clock_t start_time = clock(); // Record the starting time
-//
-//    omp_set_num_threads(4); // Adjust as needed
+//    vector<vector<char>> population(POPULATION_SIZE);
 //
 //#pragma omp parallel
 //    {
-//        vector<vector<bool>> localPopulation(POPULATION_SIZE); // Each thread has its own population
+//#pragma omp for
+//        for (int i = 0; i < POPULATION_SIZE; ++i) {
+//            population[i] = generateRandomSolution(itemCount);
+//        }
+//    }
 //
-//        int localBestFitness = 0;
-//        vector<bool> localBestSolution(itemCount);
-//        int localBestWeight = 0;
+//    int bestFitness = 0;
+//    vector<char> bestSolution;
+//    int bestWeight = 0;
 //
-//        for (int generation = 0; generation < GENERATION_COUNT; ++generation) {
-//            vector<vector<bool>> newPopulation(POPULATION_SIZE);
+//    clock_t start_time = clock();
+//
+//    for (int generation = 0; generation < GENERATION_COUNT; ++generation) {
+//        vector<vector<char>> newPopulation;
+//
+//#pragma omp parallel
+//        {
+//            int localBestFitness = 0;
+//            vector<char> localBestSolution;
+//            int localBestWeight = 0;
 //
 //#pragma omp for
 //            for (int i = 0; i < POPULATION_SIZE; ++i) {
-//                int parent1Index, parent2Index;
-//                do {
-//                    parent1Index = rand() % POPULATION_SIZE;
-//                    parent2Index = rand() % POPULATION_SIZE;
-//                } while (parent1Index == parent2Index);
+//                int parent1Index = rand() % POPULATION_SIZE;
+//                int parent2Index = rand() % POPULATION_SIZE;
 //
-//                vector<bool> child = crossover(population[parent1Index], population[parent2Index]);
+//                vector<char> child = crossover(population[parent1Index], population[parent2Index]);
+//                mutate(child);
+//
+//                int totalWeight;
+//                int fitness = calculateFitness(child, totalWeight, items);
 //
 //#pragma omp critical
 //                {
-//                    mutate(child);
-//                    int totalWeight;
-//                    int fitness = calculateFitness(child, totalWeight, items);
-//
 //                    if (fitness > localBestFitness) {
 //                        localBestFitness = fitness;
 //                        localBestSolution = child;
 //                        localBestWeight = totalWeight;
 //                    }
-//
-//                    newPopulation[i] = child;
+//                    newPopulation.push_back(child); // Add the child to the new population
 //                }
 //            }
 //
-//            // Use reduction clause to find global best fitness and solution
 //#pragma omp critical
 //            {
 //                if (localBestFitness > bestFitness) {
@@ -147,19 +139,16 @@
 //                    bestWeight = localBestWeight;
 //                }
 //            }
-//
-//#pragma omp barrier
-//#pragma omp single
-//            {
-//                localPopulation = newPopulation; // Update localPopulation outside the parallel region
-//                cout << "Generation " << generation << ": Best value = " << bestFitness << ", Best weight = " << bestWeight << endl;
-//            }
 //        }
+//
+//        population = newPopulation;
+//
+//        cout << "Generation " << generation << ": Best value = " << bestFitness << ", Best weight = " << bestWeight << endl;
 //    }
 //
-//    clock_t end_time = clock(); // Record the ending time
+//    clock_t end_time = clock();
 //
-//    double elapsed_time = static_cast<double>(end_time - start_time) / CLOCKS_PER_SEC; // Calculate elapsed time
+//    double elapsed_time = static_cast<double>(end_time - start_time) / CLOCKS_PER_SEC;
 //
 //    cout << "Best solution: ";
 //    for (size_t i = 0; i < items.size(); ++i) {
