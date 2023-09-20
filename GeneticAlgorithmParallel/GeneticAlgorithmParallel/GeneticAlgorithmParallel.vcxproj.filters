@@ -32,8 +32,12 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="File.cu" />
-    <CudaCompile Include="File1.cu" />
-    <CudaCompile Include="CUDA_GA.cu" />
+    <CudaCompile Include="CUDA_GA_Josh.cu" />
+    <CudaCompile Include="CUDA_GA_Kam.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="CUDA_GA_Final.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
   </ItemGroup>
 </Project>
