@@ -61,29 +61,13 @@ vector<char> crossover(const vector<char>& parent1, const vector<char>& parent2)
 void mutate(vector<char>& solution) {
     for (size_t i = 0; i < solution.size(); ++i) {
         if (static_cast<double>(rand()) / RAND_MAX < MUTATION_RATE) {
-            solution[i] = ~solution[i];
+            solution[i] = !solution[i];
         }
     }
 }
 
 int main(int argc, char** argv) {
-
     srand(static_cast<unsigned int>(time(nullptr)));
-
-    size_t itemCount = 77;
-
-    vector<Item> items;
-    items.reserve(itemCount);
-
-    for (size_t i = 0; i < itemCount; ++i) {
-        Item newItem;
-        newItem.name = "t" + to_string(i + 1);
-        newItem.weight = i + 1;
-        newItem.value = i + 1;
-        items.push_back(newItem);
-    }
-
-    sort(items.begin(), items.end(), compareItems);
 
     MPI_Init(&argc, &argv);
 
@@ -91,23 +75,49 @@ int main(int argc, char** argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    vector<vector<char>> localPopulation(POPULATION_SIZE / size);
-    vector<vector<char>> newLocalPopulation(POPULATION_SIZE / size);
+    size_t itemCount = 77; // Define the number of items (adjust as needed)
+    vector<Item> items;
+    items.reserve(itemCount);
 
-    int bestFitness = 0;
-    vector<char> bestSolution;
-    int bestWeight = 0;
-
-    clock_t start_time = clock();
-
-    for (int generation = 0; generation < GENERATION_COUNT; ++generation) {
-        for (int i = 0; i < POPULATION_SIZE / size; ++i) {
-            localPopulation[i] = generateRandomSolution(itemCount);
+    if (rank == 0) {
+        // Initialize items only on rank 0
+        for (size_t i = 0; i < itemCount; ++i) {
+            Item newItem;
+            newItem.name = "t" + to_string(i + 1);
+            newItem.weight = i + 1;
+            newItem.value = i + 1;
+            items.push_back(newItem);
         }
 
-        for (int i = 0; i < POPULATION_SIZE / size; ++i) {
-            int parent1Index = rand() % POPULATION_SIZE / size;
-            int parent2Index = rand() % POPULATION_SIZE / size;
+        sort(items.begin(), items.end(), compareItems);
+    }
+
+    vector<vector<char>> population(POPULATION_SIZE);
+
+    for (int i = 0; i < POPULATION_SIZE; ++i) {
+        population[i] = generateRandomSolution(itemCount);
+    }
+
+    const int localPopulationSize = POPULATION_SIZE / size;
+    vector<vector<char>> localPopulation(localPopulationSize);
+
+    // Scatter the initial population
+    //MPI_Scatter(population.data(), localPopulationSize * itemCount, MPI_CHAR,
+    //    localPopulation.data(), localPopulationSize * itemCount, MPI_CHAR, 0, MPI_COMM_WORLD);
+
+    int bestFitness = 0;
+    vector<char> bestSolution(itemCount);
+    int bestWeight = 0;
+
+    clock_t start_time = clock(); // Record the starting time
+
+    for (int generation = 0; generation < GENERATION_COUNT; ++generation) {
+        vector<vector<char>> newLocalPopulation(localPopulationSize);
+
+        // Perform genetic operations on the local population
+        for (int i = 0; i < localPopulationSize; ++i) {
+            int parent1Index = rand() % localPopulationSize;
+            int parent2Index = rand() % localPopulationSize;
 
             vector<char> child = crossover(localPopulation[parent1Index], localPopulation[parent2Index]);
 
@@ -127,18 +137,19 @@ int main(int argc, char** argv) {
 
         localPopulation = newLocalPopulation;
 
-        int globalBestFitness;
-        MPI_Allreduce(&bestFitness, &globalBestFitness, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
-        bestFitness = globalBestFitness;
+        // Gather the best solution from all processes
+        MPI_Allreduce(MPI_IN_PLACE, &bestFitness, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+        MPI_Allreduce(MPI_IN_PLACE, &bestWeight, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+        MPI_Allreduce(MPI_IN_PLACE, bestSolution.data(), itemCount, MPI_CHAR, MPI_MAX, MPI_COMM_WORLD);
 
         if (rank == 0) {
             cout << "Generation " << generation << ": Best value = " << bestFitness << ", Best weight = " << bestWeight << endl;
         }
     }
 
-    clock_t end_time = clock();
+    clock_t end_time = clock(); // Record the ending time
 
-    double elapsed_time = static_cast<double>(end_time - start_time) / CLOCKS_PER_SEC;
+    double elapsed_time = static_cast<double>(end_time - start_time) / CLOCKS_PER_SEC; // Calculate elapsed time
 
     if (rank == 0) {
         cout << "Best solution: ";
@@ -147,6 +158,7 @@ int main(int argc, char** argv) {
                 cout << items[i].name << " ";
             }
         }
+
         cout << endl;
         cout << "Elapsed time: " << elapsed_time << " seconds" << endl;
     }
@@ -155,3 +167,106 @@ int main(int argc, char** argv) {
 
     return 0;
 }
+
+//int main(int argc, char** argv) {
+//    //srand(static_cast<unsigned int>(time(nullptr)));
+//    srand(0);
+//
+//    size_t itemCount = 77;
+//
+//    vector<Item> items;
+//    items.reserve(itemCount);
+//
+//    for (size_t i = 0; i < itemCount; ++i) {
+//        Item newItem;
+//        newItem.name = "t" + to_string(i + 1);
+//        newItem.weight = i + 1;
+//        newItem.value = i + 1;
+//        items.push_back(newItem);
+//    }
+//
+//    sort(items.begin(), items.end(), compareItems);
+//
+//    vector<vector<char>> globalPopulation(POPULATION_SIZE);
+//
+//    for (int i = 0; i < POPULATION_SIZE; ++i) {
+//        globalPopulation[i] = generateRandomSolution(itemCount);
+//    }
+//
+//    int bestFitness = 0;
+//    vector<char> bestSolution;
+//    int bestWeight = 0;
+//
+//    MPI_Init(&argc, &argv);
+//
+//    int rank, size;
+//    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+//    MPI_Comm_size(MPI_COMM_WORLD, &size);
+//
+//    vector<int> sendCounts(size, POPULATION_SIZE / size);
+//    vector<int> displacements(size, POPULATION_SIZE / size);
+//    for (int i = 0; i < POPULATION_SIZE % size; i++) {
+//       sendCounts[i] += 1;
+//    }
+//    for (int i = 1; i < size; ++i) {
+//        displacements[i] = displacements[i - 1] + sendCounts[i - 1];
+//    }
+//    vector<vector<char>> localPopulation(POPULATION_SIZE / size);
+//    localPopulation.resize(sendCounts[rank]);
+//
+//    clock_t start_time = clock();
+//    for (int generation = 0; generation < GENERATION_COUNT; ++generation) {
+//        MPI_Barrier(MPI_COMM_WORLD);
+//        MPI_Scatterv(globalPopulation.data(), sendCounts.data(), displacements.data(), MPI_CHAR,
+//                    localPopulation.data(), sendCounts[rank], MPI_CHAR, 0, MPI_COMM_WORLD);
+//        //cout << rank << ", " << localPopulation.size() << endl;
+//        for (int i = 0; i < localPopulation.size(); ++i) {
+//            int parent1Index = rand() % localPopulation.size();
+//            int parent2Index = rand() % localPopulation.size();
+//            cout << rank << ", " << parent1Index << ", " << parent2Index << ", " << localPopulation.size() << endl;
+//            vector<char> child = crossover(localPopulation[parent1Index], localPopulation[parent2Index]);
+//
+//            mutate(child);
+//
+//            int totalWeight;
+//            int fitness = calculateFitness(child, totalWeight, items);
+//
+//            if (fitness > bestFitness) {
+//                bestFitness = fitness;
+//                bestSolution = child;
+//                bestWeight = totalWeight;
+//            }
+//
+//            localPopulation[i] = child;
+//        }
+//        MPI_Barrier(MPI_COMM_WORLD);
+//        MPI_Gatherv(localPopulation.data(), sendCounts[rank], MPI_CHAR,
+//            globalPopulation.data(), sendCounts.data(), displacements.data(),
+//            MPI_CHAR, 0, MPI_COMM_WORLD);
+//
+//        int globalBestFitness;
+//        MPI_Allreduce(&bestFitness, &globalBestFitness, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+//        bestFitness = globalBestFitness;
+//
+//        if (rank == 0) {
+//            cout << "Generation " << generation << ": Best value = " << bestFitness << ", Best weight = " << bestWeight << endl;
+//        }
+//    }
+//
+//    clock_t end_time = clock();
+//
+//    double elapsed_time = static_cast<double>(end_time - start_time) / CLOCKS_PER_SEC;
+//
+//    if (rank == 0) {
+//        cout << "Best solution: ";
+//        for (size_t i = 0; i < items.size(); ++i) {
+//            if (bestSolution[i]) {
+//                cout << items[i].name << " ";
+//            }
+//        }
+//        cout << endl << "Elapsed time: " << elapsed_time << " seconds" << endl;
+//    }
+//    MPI_Finalize();
+//
+//    return 0;
+//}
