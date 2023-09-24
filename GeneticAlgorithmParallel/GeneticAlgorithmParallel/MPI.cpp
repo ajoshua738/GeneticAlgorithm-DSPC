@@ -5,6 +5,7 @@
 //#include <cstdlib>
 //#include <string>
 //#include <mpi.h>
+//#include <bitset>
 //
 //using namespace std;
 //
@@ -61,13 +62,47 @@
 //void mutate(vector<char>& solution) {
 //    for (size_t i = 0; i < solution.size(); ++i) {
 //        if (static_cast<double>(rand()) / RAND_MAX < MUTATION_RATE) {
-//            solution[i] = ~solution[i];
+//            solution[i] = !solution[i];
 //        }
 //    }
 //}
 //
-//int main(int argc, char** argv) {
+//vector<char> flatten(vector<vector<char>> unflatVector, size_t itemCount) {
+//    vector<char> result;
 //
+//    for (const vector<char>& innerVector : unflatVector) {
+//        for (size_t i = 0; i < itemCount; i++) {
+//            result.push_back(innerVector[i]);
+//        }
+//    }
+//
+//    return result;
+//}
+//
+//
+//vector<vector<char>> unflatten(vector<char> flatVector, size_t itemCount) {
+//    vector<vector<char>> result;
+//
+//    size_t totalItems = flatVector.size();
+//    size_t currentIndex = 0;
+//
+//    while (currentIndex < totalItems) {
+//        vector<char> innerVector;
+//
+//        // Populate the inner vector with itemCount items or until the end of the flatVector
+//        for (size_t i = 0; i < itemCount && currentIndex < totalItems; i++) {
+//            innerVector.push_back(flatVector[currentIndex]);
+//            currentIndex++;
+//        }
+//
+//        result.push_back(innerVector);
+//    }
+//
+//    return result;
+//}
+//
+//
+//int main(int argc, char** argv) {
 //    srand(static_cast<unsigned int>(time(nullptr)));
 //
 //    size_t itemCount = 77;
@@ -85,30 +120,50 @@
 //
 //    sort(items.begin(), items.end(), compareItems);
 //
+//    vector<vector<char>> globalPopulation(POPULATION_SIZE);
+//
+//    for (int i = 0; i < POPULATION_SIZE; ++i) {
+//        globalPopulation[i] = generateRandomSolution(itemCount);
+//    }
+//
+//    vector<char> flatGlobalPopulation = flatten(globalPopulation, itemCount);
+//
+//    int bestFitness = 0;
+//    vector<char> bestSolution;
+//    int bestWeight = 0;
+//
 //    MPI_Init(&argc, &argv);
 //
 //    int rank, size;
 //    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 //    MPI_Comm_size(MPI_COMM_WORLD, &size);
 //
-//    vector<vector<char>> localPopulation(POPULATION_SIZE / size);
-//    vector<vector<char>> newLocalPopulation(POPULATION_SIZE / size);
+//    int localPopulationSize = POPULATION_SIZE / size;
+//    int flatLocalPopulationSize = POPULATION_SIZE / size * itemCount;
 //
-//    int bestFitness = 0;
-//    vector<char> bestSolution;
-//    int bestWeight = 0;
-//
+//    vector<int> sendCounts(size, flatLocalPopulationSize);
+//    vector<int> displacements(size, 0);
+//    for (int i = 0; i < POPULATION_SIZE % size; i++) {
+//        sendCounts[i] += itemCount;
+//    }
+//    for (int i = 1; i < size; ++i) {
+//        displacements[i] = displacements[i - 1] + sendCounts[i - 1];
+//    }
+//    vector<vector<char>> localPopulation(localPopulationSize, vector<char>(itemCount));
+//    localPopulation.resize(sendCounts[rank] / itemCount);
+//    vector<char> flatLocalPopulation(flatLocalPopulationSize);
+//    flatLocalPopulation.resize(sendCounts[rank]);
 //    clock_t start_time = clock();
 //
 //    for (int generation = 0; generation < GENERATION_COUNT; ++generation) {
-//        for (int i = 0; i < POPULATION_SIZE / size; ++i) {
-//            localPopulation[i] = generateRandomSolution(itemCount);
-//        }
+//        MPI_Barrier(MPI_COMM_WORLD);
 //
-//        for (int i = 0; i < POPULATION_SIZE / size; ++i) {
-//            int parent1Index = rand() % POPULATION_SIZE / size;
-//            int parent2Index = rand() % POPULATION_SIZE / size;
-//
+//        MPI_Scatterv(flatGlobalPopulation.data(), sendCounts.data(), displacements.data(), MPI_CHAR,
+//            flatLocalPopulation.data(), sendCounts[rank], MPI_CHAR, 0, MPI_COMM_WORLD);
+//        localPopulation = unflatten(flatLocalPopulation, itemCount);
+//        for (int i = 0; i < localPopulationSize; ++i) {
+//            int parent1Index = rand() % localPopulationSize;
+//            int parent2Index = rand() % localPopulationSize;
 //            vector<char> child = crossover(localPopulation[parent1Index], localPopulation[parent2Index]);
 //
 //            mutate(child);
@@ -122,14 +177,22 @@
 //                bestWeight = totalWeight;
 //            }
 //
-//            newLocalPopulation[i] = child;
+//            localPopulation[i] = child;
 //        }
+//        flatLocalPopulation = flatten(localPopulation, itemCount);
 //
-//        localPopulation = newLocalPopulation;
+//        MPI_Barrier(MPI_COMM_WORLD);
+//        MPI_Gatherv(flatLocalPopulation.data(), sendCounts[rank], MPI_CHAR,
+//            flatGlobalPopulation.data(), sendCounts.data(), displacements.data(),
+//            MPI_CHAR, 0, MPI_COMM_WORLD);
+//        globalPopulation = unflatten(flatGlobalPopulation, itemCount);
 //
-//        int globalBestFitness;
+//        int globalBestFitness, globalBestWeight;
 //        MPI_Allreduce(&bestFitness, &globalBestFitness, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+//        MPI_Allreduce(&bestWeight, &globalBestWeight, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+//        MPI_Barrier(MPI_COMM_WORLD);
 //        bestFitness = globalBestFitness;
+//        bestWeight = globalBestWeight;
 //
 //        if (rank == 0) {
 //            cout << "Generation " << generation << ": Best value = " << bestFitness << ", Best weight = " << bestWeight << endl;
