@@ -69,6 +69,7 @@
 //int main() {
 //    srand(static_cast<unsigned int>(time(nullptr)));
 //
+//
 //    size_t itemCount = 77;
 //
 //    vector<Item> items;
@@ -88,6 +89,7 @@
 //
 //#pragma omp parallel
 //    {
+//        srand(int(time(NULL)) ^ omp_get_thread_num());
 //#pragma omp for
 //        for (int i = 0; i < POPULATION_SIZE; ++i) {
 //            population[i] = generateRandomSolution(itemCount);
@@ -105,6 +107,7 @@
 //
 //#pragma omp parallel
 //        {
+//            srand(int(time(NULL)) ^ omp_get_thread_num());
 //            int localBestFitness = 0;
 //            vector<char> localBestSolution;
 //            int localBestWeight = 0;
@@ -119,14 +122,13 @@
 //
 //                int totalWeight;
 //                int fitness = calculateFitness(child, totalWeight, items);
-//
+//                if (fitness > localBestFitness) {
+//                    localBestFitness = fitness;
+//                    localBestSolution = child;
+//                    localBestWeight = totalWeight;
+//                }
 //#pragma omp critical
 //                {
-//                    if (fitness > localBestFitness) {
-//                        localBestFitness = fitness;
-//                        localBestSolution = child;
-//                        localBestWeight = totalWeight;
-//                    }
 //                    newPopulation.push_back(child); // Add the child to the new population
 //                }
 //            }
