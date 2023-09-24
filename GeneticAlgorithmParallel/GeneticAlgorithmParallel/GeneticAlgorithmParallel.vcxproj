@@ -21,14 +21,10 @@
   <ItemGroup>
     <ClCompile Include="MPI.cpp" />
     <ClCompile Include="OpenMP.cpp" />
-    <ClCompile Include="Serial_1.cpp" />
-    <ClCompile Include="Serial_2.cpp" />
     <ClCompile Include="Serial_3.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="CUDA_GA_Josh.cu" />
-    <CudaCompile Include="CUDA_GA_Kam.cu" />
-    <CudaCompile Include="CUDA_GA_Final.cu" />
+    <CudaCompile Include="CUDA_GA.cu" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

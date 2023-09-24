@@ -28,6 +28,7 @@
 //    vector<char> solution(itemCount);
 //    for (size_t i = 0; i < itemCount; ++i) {
 //        solution[i] = rand() % 2;
+//        //cout << static_cast<int>(solution[i]) << endl;
 //    }
 //    return solution;
 //}
@@ -72,7 +73,10 @@
 //
 //
 //int main() {
-//    srand(static_cast<unsigned int>(time(nullptr)));
+//    //srand(static_cast<unsigned int>(time(nullptr)));
+//    srand(0);
+//   
+//    int numOfItems = 0;
 //
 //    size_t itemCount = 77; // Define the number of items (adjust as needed)
 //
@@ -93,12 +97,15 @@
 //
 //    // Step 1: Generate random solutions
 //    for (int i = 0; i < POPULATION_SIZE; ++i) {
+//        //cout << "solution " << i << endl;
 //        population[i] = generateRandomSolution(itemCount);
 //    }
 //
 //    int bestFitness = 0;
 //    vector<char> bestSolution;
 //    int bestWeight = 0;
+//
+//    
 //
 //    clock_t start_time = clock(); // Record the starting time
 //
@@ -107,9 +114,12 @@
 //
 //        // Step 2: Takes 2 random solutions from the population
 //        for (int i = 0; i < POPULATION_SIZE; ++i) {
+//          
 //            int parent1Index = rand() % POPULATION_SIZE;
 //            int parent2Index = rand() % POPULATION_SIZE;
-//
+//         /*   cout << "parent 1 index: " << parent1Index << endl;
+//            cout << "parent 2 index: " << parent2Index << endl;*/
+//           
 //            vector<char> child = crossover(population[parent1Index], population[parent2Index]);
 //
 //            // Step 3: Mutate
@@ -130,19 +140,34 @@
 //
 //        population = newPopulation;
 //
-//        cout << "Generation " << generation << ": Best value = " << bestFitness << ", Best weight = " << bestWeight << endl;
+//        cout << "Generation " << generation +1 << ": Best value = " << bestFitness << ", Best weight = " << bestWeight << endl;
 //    }
 //
 //    clock_t end_time = clock(); // Record the ending time
 //
 //    double elapsed_time = static_cast<double>(end_time - start_time) / CLOCKS_PER_SEC; // Calculate elapsed time
 //
-//    cout << "Best solution: ";
+//    cout << "\nBest solution: ";
 //    for (size_t i = 0; i < items.size(); ++i) {
 //        if (bestSolution[i]) {
-//            cout << items[i].name << " ";
+//            cout << 1 << "";
+//        }
+//        else {
+//            cout << 0 << "";
 //        }
 //    }
+//
+//    cout << "\n\nItems Selected: ";
+//    for (size_t i = 0; i < items.size(); ++i) {
+//        if (bestSolution[i]) {
+//            numOfItems++;
+//            cout << "\n" << items[i].name <<"";
+//            
+//        }
+//    }
+//
+//    cout << "\n\nNumber of items : " << numOfItems << " \n";
+//    cout << endl;
 //
 //    cout << endl;
 //    cout << "Elapsed time: " << elapsed_time << " seconds" << endl;

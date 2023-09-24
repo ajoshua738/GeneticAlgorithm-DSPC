@@ -15,12 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Serial_1.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Serial_2.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="OpenMP.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -32,11 +26,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="CUDA_GA_Josh.cu" />
-    <CudaCompile Include="CUDA_GA_Kam.cu">
-      <Filter>Source Files</Filter>
-    </CudaCompile>
-    <CudaCompile Include="CUDA_GA_Final.cu">
+    <CudaCompile Include="CUDA_GA.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
   </ItemGroup>
